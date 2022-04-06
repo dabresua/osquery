@@ -60,6 +60,7 @@ function(generateNativeTables)
     ssh_configs.table
     startup_items.table
     system_info.table
+	time_example.table
     uptime.table
     user_ssh_keys.table
     users.table

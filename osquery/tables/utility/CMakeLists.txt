@@ -14,6 +14,7 @@ function(generateTablesUtilityUtilitytable)
     file.cpp
     osquery.cpp
     time.cpp
+	time_example.cpp
   )
 
   target_link_libraries(osquery_tables_utility_utilitytable PUBLIC

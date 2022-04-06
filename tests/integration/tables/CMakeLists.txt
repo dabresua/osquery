@@ -65,6 +65,7 @@ function(generateTestsIntegrationTablesTestsTest)
     routes.cpp
     system_info.cpp
     time.cpp
+	time_example.cpp
     uptime.cpp
     user_groups.cpp
     users.cpp

@@ -1,0 +1,20 @@
+# This .table file is called a "spec" and is written in Python
+# This syntax (several definitions) is defined in /tool/codegen/gentable.py.
+table_name("time_example")
+
+# Description
+description("Returns the current hour, minutes and seconds.")
+
+# Define the table schema
+# What it is action columns?
+schema([
+	Column("hour",    INTEGER, "The current hour"),
+	Column("minutes", INTEGER, "The current minutes"),
+	Column("seconds", INTEGER, "The current seconds"),
+])
+
+implementation("time@genTimeExample")
+
+examples([
+  "select * from users join ssh_configs using (uid)",
+])
