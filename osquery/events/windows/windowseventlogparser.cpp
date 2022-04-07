@@ -17,6 +17,7 @@
 #include <osquery/events/windows/windowseventlogparser.h>
 #include <osquery/logger/logger.h>
 #include <osquery/utils/conversions/windows/strings.h>
+#include <osquery/database/database.h>
 
 namespace pt = boost::property_tree;
 
@@ -99,6 +100,18 @@ Status parseWindowsEventLogPTree(WELEvent& windows_event,
 
   WELEvent output;
   output.osquery_time = std::time(nullptr);
+
+  output.counter = 0;
+  std::string value;
+  auto s = getDatabaseValue(kPersistentSettings, counter_key, value);
+  if (s.ok()) {
+    output.counter = lexical_cast<std::int64_t>(value);
+    output.counter++;
+  }
+  value = lexical_cast<std::string>(output.counter);
+  s = setDatabaseValue(kPersistentSettings, counter_key, value);
+
+  #error BRET
 
   output.datetime =
       event_object.get("Event.System.TimeCreated.<xmlattr>.SystemTime", "");

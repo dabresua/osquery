@@ -109,6 +109,7 @@ void WindowsEventSubscriber::generateRow(Row& row,
                                          const WELEvent& windows_event) {
   row = {};
 
+  row("counter") = BIGINT(windows_event.counter);
   row["time"] = INTEGER(windows_event.osquery_time);
   row["datetime"] = SQL_TEXT(windows_event.datetime);
   row["source"] = SQL_TEXT(windows_event.source);

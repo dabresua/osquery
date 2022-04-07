@@ -32,10 +32,14 @@ struct WELEvent final {
   std::int64_t level{0U};
   std::int64_t pid{0U};
   std::int64_t tid{0U};
+  std::int64_t counter{0U};
 
   std::string keywords;
   std::string data;
 };
+
+/// Database key to store the counter
+const std::string counter_key = "windows_event_counter";
 
 // Process event log and generate the property_tree object
 Status parseWindowsEventLogXML(boost::property_tree::ptree& event_object,

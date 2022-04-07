@@ -1,6 +1,7 @@
 table_name("windows_events")
 description("Windows Event logs.")
 schema([
+    Column("counter", BIGINT, "Monotonic counter")
     Column("time", BIGINT, "Timestamp the event was received"),
     Column("datetime", TEXT, "System time at which the event occurred"),
     Column("source", TEXT, "Source or channel of the event"),
