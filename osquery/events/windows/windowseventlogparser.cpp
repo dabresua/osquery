@@ -112,8 +112,6 @@ Status parseWindowsEventLogPTree(WELEvent& windows_event,
   value = boost::lexical_cast<std::string>(output.counter);
   s = setDatabaseValue(kPersistentSettings, counter_key, value);
 
-  #error BRET
-
   output.datetime =
       event_object.get("Event.System.TimeCreated.<xmlattr>.SystemTime", "");
 
