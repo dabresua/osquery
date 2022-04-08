@@ -12,6 +12,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/xml_parser.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include <osquery/core/flags.h>
 #include <osquery/events/windows/windowseventlogparser.h>
@@ -105,10 +106,10 @@ Status parseWindowsEventLogPTree(WELEvent& windows_event,
   std::string value;
   auto s = getDatabaseValue(kPersistentSettings, counter_key, value);
   if (s.ok()) {
-    output.counter = lexical_cast<std::int64_t>(value);
+    output.counter = boost::lexical_cast<std::int64_t>(value);
     output.counter++;
   }
-  value = lexical_cast<std::string>(output.counter);
+  value = boost::lexical_cast<std::string>(output.counter);
   s = setDatabaseValue(kPersistentSettings, counter_key, value);
 
   #error BRET
