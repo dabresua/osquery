@@ -1,7 +1,6 @@
 table_name("windows_events")
 description("Windows Event logs.")
 schema([
-    Column("counter", BIGINT, "Monotonic counter")
     Column("time", BIGINT, "Timestamp the event was received"),
     Column("datetime", TEXT, "System time at which the event occurred"),
     Column("source", TEXT, "Source or channel of the event"),
@@ -14,6 +13,7 @@ schema([
     Column("keywords", TEXT, "A bitmask of the keywords defined in the event"),
     Column("data", TEXT, "Data associated with the event"),
     Column("eid", TEXT, "Event ID", hidden=True),
+    Column("counter", BIGINT, "Monotonic counter")
 ])
 attributes(event_subscriber=True)
 implementation("windows_events@WindowsEventSubscriber::genTable")
