@@ -257,6 +257,14 @@ uint64_t getStartTime();
 /// Set the osquery tool start time.
 void setStartTime(uint64_t st);
 
+/// Get the number of osquery reboots
+uint64_t getReboots();
+
+/// Set the number of osquery reboots
+void setReboots(uint64_t rb);
+
+const std::string reboots_key = "system_reboots_counter";
+
 /**
  * @brief Initialize any platform dependent libraries or objects.
  *

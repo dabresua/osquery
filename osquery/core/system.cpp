@@ -116,6 +116,9 @@ const std::vector<std::string> kPlaceholderHardwareUUIDList{
 
 /// The time osquery was started.
 std::atomic<uint64_t> kStartTime{0};
+
+/// The number of times osquery has been rebooted
+std::atomic<uint64_t> kRebootsNumber{0};
 } // namespace
 
 #ifdef WIN32
@@ -599,6 +602,17 @@ void setStartTime(uint64_t st) {
 uint64_t getStartTime() {
   return kStartTime;
 }
+
+void setReboots(uint64_t rb)
+{
+  kRebootsNumber = rb;
+}
+
+uint64_t getReboots()
+{
+  return kRebootsNumber;
+}
+
 
 bool checkPlatform(const std::string& platform) {
   if (platform.empty() || platform == "null") {

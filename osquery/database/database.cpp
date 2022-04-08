@@ -486,6 +486,19 @@ Status initDatabasePlugin() {
   }
 
   kDBInitialized = status.ok();
+
+  // Count the number of reboots and store
+  std::uint64_t reboots = -1;
+  std::string str_reboots;
+  auto s = getDatabaseValue(kPersistentSettings, reboots_key, str_reboots);
+  if (s.ok()) {
+    reboots = boost::lexical_cast<std::uint64_t>(str_reboots);
+  }
+  reboots++;
+  setReboots(reboots);
+  str_reboots = boost::lexical_cast<std::string>(reboots);
+  s = setDatabaseValue(kPersistentSettings, reboots_key, str_reboots);
+
   return status;
 }
 
