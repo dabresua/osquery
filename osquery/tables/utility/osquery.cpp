@@ -227,6 +227,8 @@ QueryData genOsqueryInfo(QueryContext& context) {
   std::string instance;
   r["instance_id"] = (getInstanceUUID(instance)) ? instance : "";
 
+  r["reboots"] = INTEGER(getReboots());
+
   results.push_back(r);
   return results;
 }
