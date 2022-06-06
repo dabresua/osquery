@@ -21,6 +21,7 @@ function(generateOsqueryCoreInit)
   set(source_files
     init.cpp
     watcher.cpp
+    watcher_logger.cpp
   )
 
   add_osquery_library(osquery_core_init EXCLUDE_FROM_ALL
@@ -50,11 +51,13 @@ function(generateOsqueryCoreInit)
 
   set(public_header_files
     watcher.h
+    watcher_logger.h
   )
 
   generateIncludeNamespace(osquery_core_init "osquery/core" "FILE_ONLY" ${public_header_files})
 
   add_test(NAME osquery_core_tests_watcherpermissionstests-test COMMAND osquery_core_tests_watcherpermissionstests-test)
+  add_test(NAME osquery_core_tests_watcher_logger-test COMMAND osquery_core_tests_watcher_logger-test)
 endfunction()
 
 function(generateOsqueryCore)

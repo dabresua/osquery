@@ -10,6 +10,7 @@ function(osqueryCoreTestsMain)
   generateOsqueryCoreTestsSystemtestsTest()
   generateOsqueryCoreTestsTablestestsTest()
   generateOsqueryCoreTestsWatcherpermissionstestsTest()
+  generateOsqueryCoreTestsWatcherLoggerpermissionstestsTest()
   generateOsqueryCoreTestsQuerytestsTest()
   generateOsqueryCoreTestsProcesstestsTest()
 
@@ -76,6 +77,27 @@ function(generateOsqueryCoreTestsWatcherpermissionstestsTest)
   add_osquery_executable(osquery_core_tests_watcherpermissionstests-test ${source_files})
 
   target_link_libraries(osquery_core_tests_watcherpermissionstests-test PRIVATE
+    osquery_cxx_settings
+    osquery_core
+    osquery_extensions
+    osquery_extensions_implthrift
+    osquery_process
+    osquery_registry
+    tests_helper
+    osquery_utils_info
+    thirdparty_googletest
+  )
+endfunction()
+
+function(generateOsqueryCoreTestsWatcherLoggerpermissionstestsTest)
+
+  set(source_files
+    watcher_logger_tests.cpp
+  )
+
+  add_osquery_executable(osquery_core_tests_watcher_logger-test ${source_files})
+
+  target_link_libraries(osquery_core_tests_watcher_logger-test PRIVATE
     osquery_cxx_settings
     osquery_core
     osquery_extensions

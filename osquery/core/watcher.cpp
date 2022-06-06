@@ -24,6 +24,7 @@
 #include <osquery/core/shutdown.h>
 #include <osquery/core/sql/query_data.h>
 #include <osquery/core/watcher.h>
+#include <osquery/core/watcher_logger.h>
 #include <osquery/extensions/extensions.h>
 #include <osquery/filesystem/fileops.h>
 #include <osquery/filesystem/filesystem.h>
@@ -52,6 +53,7 @@ struct PerformanceChange {
   uint64_t footprint{0};
   uint64_t iv{0};
   pid_t parent{0};
+  uint64_t cpu_utilization_time{0};
 };
 
 using WatchdogLimitMap = std::map<WatchdogLimitType, LimitDefinition>;
@@ -348,6 +350,8 @@ void WatcherRunner::watchExtensions() {
         std::stringstream error;
         error << "osquery extension " << extension.first << " ("
               << extension.second->pid() << ") stopping: " << s.getMessage();
+        WLOG << "osquery extension " << extension.first << " ("
+             << extension.second->pid() << ") stopping: " << s.getMessage();
         systemLog(error.str());
         LOG(WARNING) << error.str();
         stopChild(*extension.second, true);
@@ -476,6 +480,7 @@ PerformanceChange getChange(const Row& r, PerformanceState& state) {
   auto user_time_diff = user_time - state.user_time;
   auto sys_time_diff = system_time - state.system_time;
   UNSIGNED_BIGINT_LITERAL cpu_utilization_time = user_time_diff + sys_time_diff;
+  change.cpu_utilization_time = cpu_utilization_time;
 
   if (cpu_utilization_time > cpu_ul) {
     state.sustained_latency++;
@@ -581,6 +586,8 @@ Status WatcherRunner::isChildSane(const PlatformProcess& child) const {
   }
 
   if (exceededCyclesLimit(change)) {
+    WLOG << "PID " << child.pid() << " CPU utilization limit exceeded: "
+         << (change.sustained_latency * change.iv);
     return Status(1,
                   "Maximum sustainable CPU utilization limit exceeded: " +
                       std::to_string(change.sustained_latency * change.iv));
@@ -588,9 +595,15 @@ Status WatcherRunner::isChildSane(const PlatformProcess& child) const {
 
   // Check if the private memory exceeds a memory limit.
   if (exceededMemoryLimit(change)) {
+    WLOG << "PID " << child.pid() << " memory limits exceeded: " << change.footprint;
     return Status(
         1, "Memory limits exceeded: " + std::to_string(change.footprint));
   }
+
+  WLOG << ";PID;" << child.pid() << ";CPU;"
+         << change.cpu_utilization_time << ";latency;"
+         << (change.sustained_latency * change.iv)
+         << ";mem;" << change.footprint;
 
   // The worker is sane, no action needed.
   // Attempt to flush status logs to the well-behaved worker.
@@ -616,6 +629,8 @@ void WatcherRunner::createWorker() {
   if (watcher_->getState(watcher_->getWorker()).last_respawn_time >
       getUnixTime() - getWorkerLimit(WatchdogLimitType::RESPAWN_LIMIT)) {
     watcher_->workerRestarted();
+    WLOG << "osqueryd worker respawning too quickly: "
+         << watcher_->workerRestartCount() << " times";
     LOG(WARNING) << "osqueryd worker respawning too quickly: "
                  << watcher_->workerRestartCount() << " times";
 
@@ -649,6 +664,7 @@ void WatcherRunner::createWorker() {
   boost::system::error_code ec;
   auto exec_path = fs::system_complete(fs::path(qd[0]["path"]), ec);
   if (!pathExists(exec_path).ok()) {
+    WLOG << "osqueryd doesn't exist in: " << exec_path.string();
     LOG(WARNING) << "osqueryd doesn't exist in: " << exec_path.string();
     return;
   }
@@ -664,6 +680,7 @@ void WatcherRunner::createWorker() {
   auto worker = PlatformProcess::launchWorker(exec_path.string(), argc_, argv_);
   if (worker == nullptr) {
     // Unrecoverable error, cannot create a worker process.
+    WLOG << "osqueryd could not create a worker process";
     LOG(ERROR) << "osqueryd could not create a worker process";
     requestShutdown(EXIT_FAILURE);
     return;
@@ -671,6 +688,8 @@ void WatcherRunner::createWorker() {
 
   watcher_->setWorker(worker);
   watcher_->resetWorkerCounters(getUnixTime());
+  WLOG << "osqueryd watcher (" << PlatformProcess::getCurrentPid()
+       << ") executing worker (" << worker->pid() << ")";
   VLOG(1) << "osqueryd watcher (" << PlatformProcess::getCurrentPid()
           << ") executing worker (" << worker->pid() << ")";
   watcher_->worker_status_ = -1;
@@ -689,6 +708,7 @@ void WatcherRunner::createExtension(const std::string& extension) {
   {
     if (watcher_->getState(extension).last_respawn_time >
         getUnixTime() - getWorkerLimit(WatchdogLimitType::RESPAWN_LIMIT)) {
+      WLOG << "Extension respawning too quickly: " << extension;
       LOG(WARNING) << "Extension respawning too quickly: " << extension;
       // Unlike a worker, if an extension respawns to quickly we give up.
     }
@@ -698,12 +718,15 @@ void WatcherRunner::createExtension(const std::string& extension) {
   boost::system::error_code ec;
   auto exec_path = fs::system_complete(fs::path(extension), ec);
   if (!pathExists(exec_path).ok()) {
+    WLOG << "Extension binary doesn't exist in: " << exec_path.string();
     LOG(WARNING) << "Extension binary doesn't exist in: " << exec_path.string();
     return;
   }
   if (!safePermissions(
           exec_path.parent_path().string(), exec_path.string(), true)) {
     // Extension binary has become unsafe.
+    WLOG << RLOG(1382)
+         << "Extension binary has unsafe permissions: " << extension;
     LOG(WARNING) << RLOG(1382)
                  << "Extension binary has unsafe permissions: " << extension;
     return;
@@ -717,6 +740,7 @@ void WatcherRunner::createExtension(const std::string& extension) {
                                        Flag::getValue("verbose") == "true");
   if (ext_process == nullptr) {
     // Unrecoverable error, cannot create an extension process.
+    WLOG << "Cannot create extension process: " << extension;
     LOG(ERROR) << "Cannot create extension process: " << extension;
     requestShutdown(EXIT_FAILURE);
   }
@@ -731,6 +755,8 @@ void WatcherWatcherRunner::start() {
   while (!interrupted()) {
     if (isLauncherProcessDead(*watcher_)) {
       // Watcher died, the worker must follow.
+      WLOG << "osqueryd worker (" << PlatformProcess::getCurrentPid()
+           << ") detected killed watcher (" << watcher_->pid() << ")";
       VLOG(1) << "osqueryd worker (" << PlatformProcess::getCurrentPid()
               << ") detected killed watcher (" << watcher_->pid() << ")";
       // The watcher watcher is a thread. Do not join services after removing.
