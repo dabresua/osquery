@@ -32,6 +32,14 @@ public:
   WatcherLogger();
 
   /**
+   * @brief Construct a new Watcher Logger object
+   * 
+   * @param file_str where the log takes place
+   * @param line_num where the log takes place
+   */
+  WatcherLogger(const char* file_str, int line_num);
+
+  /**
    * @brief Destructor, saves the buffer into a new line in the file
    * 
    */
@@ -64,5 +72,6 @@ private:
 
 // TODO: variadic macro to add severity
 #define WLOG WatcherLogger()
+#define WFLOG WatcherLogger(__FILE__, __LINE__)
 
 } // namespace osquery

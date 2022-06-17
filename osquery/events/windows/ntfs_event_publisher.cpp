@@ -23,6 +23,7 @@
 #include <osquery/utils/system/errno.h>
 
 #include "osquery/events/windows/ntfs_event_publisher.h"
+#include <osquery/core/watcher_logger.h>
 
 namespace osquery {
 
@@ -461,7 +462,9 @@ void NTFSEventPublisher::configure() {
 }
 
 Status NTFSEventPublisher::run() {
+  WFLOG << "NTFSEventPublisher::run";
   if (!FLAGS_enable_ntfs_event_publisher) {
+    WFLOG << "NTFS event publisher disabled via configuration";
     return Status::failure("NTFS event publisher disabled via configuration");
   }
 
@@ -469,8 +472,10 @@ Status NTFSEventPublisher::run() {
 
   auto journal_records = acquireJournalRecords();
   if (journal_records.empty()) {
+    WFLOG << "Is empty";
     return Status::success();
   }
+  WFLOG << "Journal records: " << journal_record.size();
 
   auto event_context = createEventContext();
 
@@ -489,6 +494,7 @@ Status NTFSEventPublisher::run() {
     bool skip_record = false;
     USNJournalEventRecord old_name_record = {};
 
+    WFLOG << "Journal type" << journal_record.type;
     switch (journal_record.type) {
     case USNJournalEventRecord::Type::DirectoryRename_OldName:
     case USNJournalEventRecord::Type::FileRename_OldName: {
@@ -526,6 +532,7 @@ Status NTFSEventPublisher::run() {
     }
 
     if (skip_record) {
+      WFLOG << "skipping record";
       continue;
     }
 
@@ -541,6 +548,8 @@ Status NTFSEventPublisher::run() {
                                              journal_record.drive_letter,
                                              journal_record.node_ref_number);
     if (!status.ok()) {
+      WFLOG << "FRN pathname lookup failed, trying parent: "
+            << status.getMessage();
       TLOG << "FRN pathname lookup failed, trying parent: "
            << status.getMessage();
 
@@ -551,6 +560,7 @@ Status NTFSEventPublisher::run() {
                                     journal_record.parent_ref_number);
 
       if (!status.ok()) {
+        WFLOG << "Parent FRN lookup failed: " << status.getMessage();
         VLOG(1) << "Parent FRN lookup failed: " << status.getMessage();
 
         event.path = journal_record.name;
@@ -565,6 +575,7 @@ Status NTFSEventPublisher::run() {
                                     old_name_record.name,
                                     old_name_record.parent_ref_number);
       if (!status.ok()) {
+        WFLOG << "Parent FRN lookup failed: " << status.getMessage();
         VLOG(1) << "Parent FRN lookup failed: " << status.getMessage();
         event.partial = true;
       }

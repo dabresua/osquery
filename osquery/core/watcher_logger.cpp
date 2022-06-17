@@ -27,6 +27,17 @@ namespace osquery {
                  << FLAGS_watchdog_logs_path;
   }
 
+  WatcherLogger::WatcherLogger(const char* file_str, int line_num) 
+    : buffer(), file() {
+    std::stringstream ss;
+    ss << "[" << file_str << ":" << line_num << "] ";
+    buffer += ss.str();
+    file.open(getFileName(), std::ios::out | std::ios::app);
+    if (!file.is_open())
+      LOG(ERROR) << "can not open the file to write at " 
+                 << FLAGS_watchdog_logs_path;
+  }
+
   WatcherLogger::~WatcherLogger() {
     if (file.is_open()) {
       std::time_t t = std::time(nullptr);
