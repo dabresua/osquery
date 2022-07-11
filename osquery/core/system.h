@@ -141,6 +141,9 @@ class Initializer : private boost::noncopyable {
   /// This pauses the watchdog process until the watcher thread stops.
   void waitForWatcher() const;
 
+  static void resourceLimitHit();
+  static bool isResourceLimitHit();
+
  private:
   /// Set and wait for an active plugin optionally broadcasted.
   void initActivePlugin(const std::string& type, const std::string& name) const;
@@ -156,22 +159,9 @@ class Initializer : private boost::noncopyable {
 
   /// Is this a worker process
   static bool isWorker_;
+
+  static std::atomic<bool> resource_limit_hit_;
 };
-
-/**
- * @brief Getter for a host's current hostname
- *
- * @return a string representing the host's current hostname
- */
-std::string getHostname();
-
-/**
- * @brief Getter for a host's fully qualified domain name
- *
- * @return a string representation of the hosts fully qualified domain name
- * if the host is joined to a domain, otherwise it simply returns the hostname
- */
-std::string getFqdn();
 
 /**
  * @brief Generate a new generic UUID

@@ -45,6 +45,7 @@ function(detectOsqueryVersion)
   string(REPLACE "." ";" osquery_version_components "${osquery_version}")
 
   list(LENGTH osquery_version_components osquery_version_components_len)
+
   if(NOT osquery_version_components_len GREATER_EQUAL 3)
     message(FATAL_ERROR "Version should have at least 3 components (semvar).")
   endif()
@@ -71,6 +72,7 @@ option(OSQUERY_NO_DEBUG_SYMBOLS "Whether to build without debug symbols or not, 
 option(OSQUERY_BUILD_TESTS "Whether to enable and build tests or not")
 option(OSQUERY_BUILD_ROOT_TESTS "Whether to enable and build tests that require root access")
 
+# Sanitizers
 option(OSQUERY_ENABLE_ADDRESS_SANITIZER "Whether to enable Address Sanitizer")
 
 if(DEFINED PLATFORM_POSIX)
@@ -87,6 +89,8 @@ if(DEFINED PLATFORM_LINUX OR DEFINED PLATFORM_WINDOWS)
   endif()
 
   if(DEFINED PLATFORM_LINUX)
+    option(OSQUERY_ENABLE_LEAK_SANITIZER "Whether to enable Leak Sanitizer")
+
     # This is required for Boost coroutines/context to be built in a way that are compatible to Valgrind
     option(OSQUERY_ENABLE_VALGRIND_SUPPORT "Whether to enable support for osquery to be run under Valgrind")
 
@@ -112,6 +116,10 @@ option(OSQUERY_ENABLE_FORMAT_ONLY "Configure CMake to format only, not build")
 # Unfortunately, due glog always enabling BUILD_TESTING, we have to force it off, so that tests won't be built
 overwrite_cache_variable("BUILD_TESTING" "BOOL" "OFF")
 
+if(DEFINED PLATFORM_POSIX)
+  option(OSQUERY_ENABLE_CCACHE "Whether to search ccache in the system and use it in the build" ON)
+endif()
+
 set(third_party_source_list "source;formula")
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules" CACHE STRING "A list of paths containing CMake module files")
@@ -128,6 +136,7 @@ endif()
 # When building on macOS, make sure we are only building one architecture at a time
 if(PLATFORM_MACOS)
   list(LENGTH CMAKE_OSX_ARCHITECTURES osx_arch_count)
+
   if(osx_arch_count GREATER 1)
     message(FATAL_ERROR "The CMAKE_OSX_ARCHITECTURES setting can only contain one architecture at a time")
   endif()
