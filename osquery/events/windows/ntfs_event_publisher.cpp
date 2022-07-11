@@ -82,10 +82,12 @@ struct NTFSEventPublisher::PrivateData final {
 
 void NTFSEventPublisher::restartJournalReaderServices(
     NTFSEventPublisherConfiguration& active_drives) {
+  WFLOG << "restartJournalReaderServices";
   WriteLock lock(d_->reader_service_map_mutex);
 
   // Spawn new services
   for (const auto& drive_letter : active_drives) {
+    WFLOG << "Drive " << drive_letter;
     if (d_->reader_service_map.find(drive_letter) !=
         d_->reader_service_map.end()) {
       continue;
@@ -94,6 +96,8 @@ void NTFSEventPublisher::restartJournalReaderServices(
     auto context = std::make_shared<USNJournalReaderContext>();
     context->drive_letter = drive_letter;
 
+    WFLOG << "Creating a new USNJournalReader service for drive "
+          << drive_letter << ":";
     VLOG(1) << "Creating a new USNJournalReader service for drive "
             << drive_letter << ":";
 
@@ -119,6 +123,8 @@ void NTFSEventPublisher::restartJournalReaderServices(
     auto& service_instance = service_it->second;
     auto& service_context = service_instance.context;
 
+    WFLOG << "Terminating the USNJournalReader service assigned to drive "
+          << drive_letter << ":";
     VLOG(1) << "Terminating the USNJournalReader service assigned to drive "
             << drive_letter << ":";
 
@@ -128,11 +134,13 @@ void NTFSEventPublisher::restartJournalReaderServices(
 }
 
 std::vector<USNJournalEventRecord> NTFSEventPublisher::acquireJournalRecords() {
+  WFLOG << "acquireJournalRecords";
   // We have a reader service for each volume; attempt to fetch data
   // from each one of them
   std::vector<USNJournalEventRecord> record_list;
 
   for (auto& reader_info : d_->reader_service_map) {
+    WFLOG << "Drive " << reader_info.first;
     auto& reader_instance = reader_info.second;
     auto& reader_context = reader_instance.context;
 
@@ -163,6 +171,7 @@ std::vector<USNJournalEventRecord> NTFSEventPublisher::acquireJournalRecords() {
 }
 
 NTFSEventPublisherConfiguration NTFSEventPublisher::readConfiguration() {
+  WFLOG << "readConfiguration";
   NTFSEventPublisherConfiguration configuration = {};
 
   // We are not going to expand the paths, as we just need to get the
@@ -170,11 +179,15 @@ NTFSEventPublisherConfiguration NTFSEventPublisher::readConfiguration() {
   Config::get().files(
       [&configuration](const std::string& category,
                        const std::vector<std::string>& path_list) {
+        WFLOG << "path_list size " << path_list.size() << " cat " << category;
         for (const auto& path : path_list) {
           const auto& drive_letter = static_cast<char>(::toupper(path.front()));
           configuration.insert(drive_letter);
         }
       });
+
+  for (const auto& c : configuration)
+      WFLOG << "Drive: " << c;
 
   return configuration;
 }
@@ -425,6 +438,7 @@ Status NTFSEventPublisher::getVolumeData(VolumeData& volume,
 }
 
 void NTFSEventPublisher::releaseDriveHandleMap() {
+  WFLOG << "releaseDriveHandleMap";
   WriteLock lock(d_->volume_data_map_mutex);
 
   for (const auto& p : d_->volume_data_map) {
@@ -443,6 +457,7 @@ NTFSEventPublisher::~NTFSEventPublisher() {
 }
 
 Status NTFSEventPublisher::setUp() {
+  WFLOG << "setUp flag " << FLAGS_enable_ntfs_event_publisher;
   if (!FLAGS_enable_ntfs_event_publisher) {
     return Status::failure("NTFS event publisher disabled via configuration");
   }
@@ -451,6 +466,7 @@ Status NTFSEventPublisher::setUp() {
 }
 
 void NTFSEventPublisher::configure() {
+  WFLOG << "configure";
   if (!FLAGS_enable_ntfs_event_publisher) {
     return;
   }
@@ -462,7 +478,6 @@ void NTFSEventPublisher::configure() {
 }
 
 Status NTFSEventPublisher::run() {
-  WFLOG << "NTFSEventPublisher::run";
   if (!FLAGS_enable_ntfs_event_publisher) {
     WFLOG << "NTFS event publisher disabled via configuration";
     return Status::failure("NTFS event publisher disabled via configuration");
@@ -475,7 +490,7 @@ Status NTFSEventPublisher::run() {
     WFLOG << "Is empty";
     return Status::success();
   }
-  WFLOG << "Journal records: " << journal_record.size();
+  WFLOG << "Journal records: " << journal_records.size();
 
   auto event_context = createEventContext();
 
@@ -494,7 +509,6 @@ Status NTFSEventPublisher::run() {
     bool skip_record = false;
     USNJournalEventRecord old_name_record = {};
 
-    WFLOG << "Journal type" << journal_record.type;
     switch (journal_record.type) {
     case USNJournalEventRecord::Type::DirectoryRename_OldName:
     case USNJournalEventRecord::Type::FileRename_OldName: {
@@ -618,6 +632,7 @@ Status NTFSEventPublisher::run() {
 }
 
 void NTFSEventPublisher::tearDown() {
+  WFLOG << "tearDown " << FLAGS_enable_ntfs_event_publisher;
   if (!FLAGS_enable_ntfs_event_publisher) {
     return;
   }

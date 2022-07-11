@@ -67,6 +67,7 @@ function(generateOsqueryCore)
     shutdown.cpp
     system.cpp
     tables.cpp
+    watcher_logger.cpp
   )
 
   if(DEFINED PLATFORM_POSIX)
@@ -131,6 +132,7 @@ function(generateOsqueryCore)
     tables.h
     shutdown.h
     system.h
+    watcher_logger.h
   )
 
   if(DEFINED PLATFORM_WINDOWS)
