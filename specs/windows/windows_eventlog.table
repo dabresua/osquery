@@ -16,6 +16,7 @@ schema([
     Column("time_range", TEXT, "System time to selectively filter the events", hidden=True, additional=True),
     Column("timestamp", TEXT, "Timestamp to selectively filter the events", hidden=True, additional=True),
     Column("xpath", TEXT, "The custom query to filter events", hidden=True, required=True),
+    Column("max_rows", INTEGER, "The max number of rows returned", hidden=True, additional=True)
 ])
 
 implementation("system/windows_eventlog@genWindowsEventLog", generator=True)

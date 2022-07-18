@@ -50,7 +50,8 @@ TEST_F(WindowsEventLogTests, parse_wel_xml) {
   context.constraints["timestamp"].add(Constraint(EQUALS, "43200000"));
 
   Row row;
-  parseWelXml(context, stringToWstring(xml_event), row);
+  SequentialItem seqItem;
+  parseWelXml(context, stringToWstring(xml_event), row, seqItem, 0);
 
   /* NOTE: The escaping of the backslash doesn't match the original xml event
      because JSON is also escaping the backslash, so there are two levels. */
@@ -79,6 +80,7 @@ TEST_F(WindowsEventLogTests, parse_wel_xml) {
 TEST_F(WindowsEventLogTests, gen_xfilter_test1) {
   QueryContext context;
   std::string xfilter;
+  SequentialItem seqItem;
 
   std::string xpath =
       "*[System[(EventID=1000) and (Execution[@ProcessID=0]) and "
@@ -93,13 +95,14 @@ TEST_F(WindowsEventLogTests, gen_xfilter_test1) {
   context.constraints["time_range"].add(
       Constraint(EQUALS, "2020-08-18T00:14:54.000Z;2020-08-19T00:14:53.999Z"));
 
-  genXfilterFromConstraints(context, xfilter);
+  genXfilterFromConstraints(context, xfilter, seqItem);
   EXPECT_EQ(xfilter, xpath);
 }
 
 TEST_F(WindowsEventLogTests, gen_xfilter_test2) {
   QueryContext context;
   std::string xfilter("");
+  SequentialItem seqItem;
 
   std::string xpath =
       "*[System[(EventID=1000) and (Execution[@ProcessID=0]) and "
@@ -111,7 +114,7 @@ TEST_F(WindowsEventLogTests, gen_xfilter_test2) {
   context.constraints["pid"].add(Constraint(EQUALS, "0"));
   context.constraints["timestamp"].add(Constraint(EQUALS, "43200000"));
 
-  genXfilterFromConstraints(context, xfilter);
+  genXfilterFromConstraints(context, xfilter, seqItem);
   EXPECT_EQ(xfilter, xpath);
 }
 

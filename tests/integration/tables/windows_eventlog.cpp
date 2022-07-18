@@ -43,6 +43,38 @@ TEST_F(windowsEventLog, test_sanity) {
   };
 
   validate_rows(data, row_map);
+
+  // max rows tests
+  QueryData const r1 = execute_query(
+    "select * from windows_eventlog where channel = 'Application' "
+    "and max_rows = 15");
+  ASSERT_EQ(r1.size(), 15ul);
+  QueryData const r2 = execute_query(
+    "select * from windows_eventlog where channel = 'Application' "
+    "and max_rows = 1");
+  ASSERT_EQ(r2.size(), 1ul);
+  QueryData const r3 = execute_query(
+    "select * from windows_eventlog where channel = 'Application' "
+    "and max_rows = 0");
+  ASSERT_GT(r3.size(), 0ul);
+
+  // Sequential test: TODO validate
+  QueryData const r4 = execute_query(
+    "select * from windows_eventlog where channel = 'Application' "
+    "and eventid > -1 and max_rows = 5");
+  ASSERT_GT(r4.size(), 0ul);
+  QueryData const r5 = execute_query(
+    "select * from windows_eventlog where channel = 'Application' "
+    "and eventid > -1 and max_rows = 5");
+  ASSERT_GT(r5.size(), 0ul);
+  QueryData const r6 = execute_query(
+    "select * from windows_eventlog where channel = 'Application' "
+    "and eventid > -1 and max_rows = 5");
+  ASSERT_GT(r6.size(), 0ul);
+  QueryData const r7 = execute_query(
+    "select * from windows_eventlog where channel = 'Application' "
+    "and eventid > -1 and max_rows = 5");
+  ASSERT_GT(r7.size(), 0ul);
 }
 
 } // namespace table_tests
